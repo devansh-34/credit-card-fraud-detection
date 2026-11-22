@@ -1,0 +1,40 @@
+{
+  "evaluation_split": "validation",
+  "note": "Threshold optimization is on validation data; these are not final test results.",
+  "results": [
+    {
+      "Model": "Logistic Regression",
+      "Accuracy_0.5": 0.9720858102868959,
+      "Precision_0.5": 0.050683829444891394,
+      "Recall_0.5": 0.8873239436619719,
+      "F1_0.5": 0.0958904109589041,
+      "ROC_AUC": 0.9718722568891034,
+      "PR_AUC": 0.6971470262743039,
+      "Best_F1_Threshold_Validation": 0.95,
+      "Best_F1_Validation": 0.5108225108225108,
+      "Precision_BestThreshold": 0.36875,
+      "Recall_BestThreshold": 0.8309859154929577,
+      "TN_0.5": 41308,
+      "FP_0.5": 1180,
+      "FN_0.5": 8,
+      "TP_0.5": 63
+    },
+    {
+      "Model": "Random Forest",
+      "Accuracy_0.5": 0.9995065673535563,
+      "Precision_0.5": 0.9807692307692307,
+      "Recall_0.5": 0.7183098591549296,
+      "F1_0.5": 0.8292682926829268,
+      "ROC_AUC": 0.946900997398437,
+      "PR_AUC": 0.8558546747618508,
+      "Best_F1_Threshold_Validation": 0.18,
+      "Best_F1_Validation": 0.8571428571428571,
+      "Precision_BestThreshold": 0.9193548387096774,
+      "Recall_BestThreshold": 0.8028169014084507,
+      "TN_0.5": 42487,
+      "FP_0.5": 1,
+      "FN_0.5": 20,
+      "TP_0.5": 51
+    }
+  ]
+}

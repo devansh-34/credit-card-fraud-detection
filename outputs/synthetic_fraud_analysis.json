@@ -1,0 +1,13 @@
+{
+    "original_fraud_samples": 331,
+    "synthetic_fraud_samples": 1000,
+    "nan_values": 0,
+    "infinite_values": 0,
+    "duplicate_synthetic_rows": 0,
+    "mean_difference": 1.4460631139983684,
+    "std_difference": 1.9296304658841095,
+    "pca_explained_variance": [
+        0.6337090887872561,
+        0.11973393176615163
+    ]
+}

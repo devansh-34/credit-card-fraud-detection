@@ -1,0 +1,8 @@
+{
+    "model": "PyTorch Deep MLP",
+    "device": "mps",
+    "epochs": 30,
+    "roc_auc": 0.9764337768277904,
+    "pr_auc": 0.6923216553697946,
+    "best_validation_threshold": 0.9934114813804626
+}

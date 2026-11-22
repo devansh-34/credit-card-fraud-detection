@@ -1,0 +1,20 @@
+{
+    "model": "LSTM",
+    "sequence_length": 10,
+    "input_features": 30,
+    "roc_auc": 0.9704474780713662,
+    "pr_auc": 0.7786638216581541,
+    "threshold": 0.9899068474769592,
+    "confusion_matrix": [
+        [
+            42497,
+            1
+        ],
+        [
+            16,
+            36
+        ]
+    ],
+    "classification_report": "              precision    recall  f1-score   support\n\n         0.0       1.00      1.00      1.00     42498\n         1.0       0.97      0.69      0.81        52\n\n    accuracy                           1.00     42550\n   macro avg       0.99      0.85      0.90     42550\nweighted avg       1.00      1.00      1.00     42550\n",
+    "validation_f1": 0.845360824742268
+}

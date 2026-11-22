@@ -1,0 +1,23 @@
+[
+    {
+        "optimizer": "SGD",
+        "train_loss": 0.7199502926817448,
+        "validation_loss": 0.7705552672482006,
+        "roc_auc": 0.9263679421662719,
+        "pr_auc": 0.18454694144621622
+    },
+    {
+        "optimizer": "Momentum",
+        "train_loss": 0.3579071333436096,
+        "validation_loss": 0.4241740426129299,
+        "roc_auc": 0.9585617877856482,
+        "pr_auc": 0.6044234970597941
+    },
+    {
+        "optimizer": "Nesterov",
+        "train_loss": 0.3576476583271734,
+        "validation_loss": 0.42466407082729263,
+        "roc_auc": 0.9584817320416568,
+        "pr_auc": 0.6037240223085854
+    }
+]
