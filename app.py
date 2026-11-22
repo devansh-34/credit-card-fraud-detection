@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 
 # =====================================================
-# CREDIT CARD FRAUD DETECTION DASHBOARD
+# CREDIT CARD FRAUD DETECTION APPLICATION
 # =====================================================
 
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -22,9 +22,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# -----------------------------------------------------
-# 1. LOAD MODEL ARCHITECTURE
-# -----------------------------------------------------
+# =====================================================
+# MODEL ARCHITECTURE
+# =====================================================
 
 class FraudDetectionMLP(nn.Module):
 
@@ -51,6 +51,10 @@ class FraudDetectionMLP(nn.Module):
         return self.network(x)
 
 
+# =====================================================
+# LOAD MODEL AND ASSETS
+# =====================================================
+
 @st.cache_resource
 def load_model_and_assets():
 
@@ -76,284 +80,842 @@ def load_model_and_assets():
     return model, scaler, feature_names, results
 
 
-# -----------------------------------------------------
-# 2. DASHBOARD HEADER
-# -----------------------------------------------------
+# =====================================================
+# PREDICTION FUNCTION
+# =====================================================
 
-st.title("💳 Credit Card Fraud Detection")
-st.write(
-    "A deep learning application using a PyTorch "
-    "Multi-Layer Perceptron to identify potentially "
-    "fraudulent credit card transactions."
-)
+def predict_transactions(transaction_df, model, scaler, threshold):
 
-st.divider()
+    scaled_data = scaler.transform(transaction_df)
 
-# -----------------------------------------------------
-# 3. LOAD SAVED MODEL
-# -----------------------------------------------------
+    input_tensor = torch.tensor(
+        scaled_data,
+        dtype=torch.float32
+    )
+
+    with torch.no_grad():
+
+        logits = model(input_tensor)
+
+        probabilities = torch.sigmoid(
+            logits
+        ).numpy().reshape(-1)
+
+    predictions = (
+        probabilities >= threshold
+    ).astype(int)
+
+    return probabilities, predictions
+
+
+# =====================================================
+# LOAD MODEL
+# =====================================================
 
 try:
 
     model, scaler, feature_names, results = load_model_and_assets()
 
+    threshold = float(
+        results["best_validation_threshold"]
+    )
+
 except Exception as e:
 
-    st.error("Unable to load the trained model or its files.")
+    st.error("Unable to load the trained model.")
+
     st.exception(e)
+
     st.stop()
 
 
-threshold = float(results["best_validation_threshold"])
+# =====================================================
+# SIDEBAR
+# =====================================================
 
-st.success("Trained fraud detection model loaded successfully.")
+st.sidebar.title("💳 Fraud Detection")
 
-# -----------------------------------------------------
-# 4. MODEL PERFORMANCE
-# -----------------------------------------------------
-
-st.header("1. Model Performance")
-
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric(
-    "Model",
-    "Deep MLP"
+st.sidebar.write(
+    "Deep Learning Based Credit Card Fraud Detection"
 )
 
-col2.metric(
-    "ROC-AUC",
-    f'{results["roc_auc"]:.4f}'
+page = st.sidebar.radio(
+    "Navigation",
+    [
+        "🏠 Home",
+        "✍️ Manual Prediction",
+        "📂 Batch Prediction",
+        "📊 Model Analytics",
+        "🧪 Synthetic Data",
+        "ℹ️ Project Information"
+    ]
 )
 
-col3.metric(
-    "PR-AUC",
-    f'{results["pr_auc"]:.4f}'
-)
+st.sidebar.divider()
 
-col4.metric(
+st.sidebar.success("Trained MLP Model Loaded")
+
+st.sidebar.metric(
     "Decision Threshold",
     f"{threshold:.4f}"
 )
 
-st.caption(
-    "Metrics shown above were calculated on validation data "
-    "during model training."
+st.sidebar.caption(
+    "Academic demonstration using a PyTorch Deep Learning model."
 )
 
-st.divider()
 
-# -----------------------------------------------------
-# 5. TRAINING VISUALIZATIONS
-# -----------------------------------------------------
+# =====================================================
+# PAGE 1: HOME
+# =====================================================
 
-st.header("2. Training and Evaluation Graphs")
+if page == "🏠 Home":
 
-graph_files = [
-    (
-        "Training Loss",
-        OUTPUT_DIR / "pytorch_training_loss.png"
-    ),
-    (
-        "Precision-Recall Curve",
-        OUTPUT_DIR / "pytorch_precision_recall.png"
-    ),
-    (
-        "Confusion Matrix",
-        OUTPUT_DIR / "pytorch_confusion_matrix.png"
+    st.title("💳 Credit Card Fraud Detection")
+
+    st.subheader(
+        "Deep Learning Based Fraud Detection System"
     )
-]
 
-for title, image_path in graph_files:
+    st.write("""
+    This application uses a Deep Learning Multi-Layer Perceptron
+    to identify potentially fraudulent credit card transactions.
 
-    if image_path.exists():
+    Users can manually enter transaction details or upload
+    transaction data in CSV format to receive predictions.
+    """)
 
-        st.subheader(title)
-        st.image(str(image_path), use_container_width=True)
+    st.success("Trained Deep Learning Model Loaded Successfully")
 
-    else:
+    st.divider()
 
-        st.warning(f"Graph not found: {image_path.name}")
+    st.header("Model Overview")
 
-st.divider()
+    col1, col2, col3, col4 = st.columns(4)
 
-# -----------------------------------------------------
-# 6. SYNTHETIC FRAUD DATA
-# -----------------------------------------------------
+    col1.metric(
+        "Model",
+        "Deep MLP"
+    )
 
-st.header("3. Synthetic Fraud Data Analysis")
+    col2.metric(
+        "ROC-AUC",
+        f'{results["roc_auc"]:.4f}'
+    )
 
-synthetic_path = OUTPUT_DIR / "synthetic_fraud_pca.png"
-comparison_path = OUTPUT_DIR / "synthetic_feature_comparison.png"
+    col3.metric(
+        "PR-AUC",
+        f'{results["pr_auc"]:.4f}'
+    )
 
-if synthetic_path.exists():
+    col4.metric(
+        "Threshold",
+        f"{threshold:.4f}"
+    )
 
-    st.subheader("PCA Visualization")
-    st.image(str(synthetic_path), use_container_width=True)
+    st.divider()
 
-if comparison_path.exists():
+    st.header("Application Features")
 
-    st.subheader("Original vs Synthetic Feature Comparison")
-    st.image(str(comparison_path), use_container_width=True)
+    col1, col2 = st.columns(2)
 
-st.write(
-    "A Variational Autoencoder (VAE) was trained on "
-    "fraudulent training examples to generate experimental "
-    "synthetic transactions."
-)
+    with col1:
 
-st.caption(
-    "Synthetic transactions are experimental samples, "
-    "not verified real-world fraud cases."
-)
+        st.info("""
+        **Manual Fraud Prediction**
 
-st.divider()
+        Enter transaction information using an
+        interactive form and get an instant prediction.
+        """)
 
-# -----------------------------------------------------
-# 7. TRANSACTION PREDICTION
-# -----------------------------------------------------
+        st.info("""
+        **Batch Prediction**
 
-st.header("4. Test a Transaction")
+        Upload a CSV containing multiple transactions
+        and analyse them simultaneously.
+        """)
 
-st.write(
-    "Upload a CSV containing transaction features. "
-    "The CSV must contain the same 30 input features "
-    "used during model training."
-)
+    with col2:
 
-st.info(
-    "Upload raw, unscaled feature values. "
-    "Do not include the Class column. "
-    "The application applies the saved scaler automatically."
-)
+        st.info("""
+        **Model Analytics**
 
-uploaded_file = st.file_uploader(
-    "Upload transaction CSV",
-    type=["csv"]
-)
+        Explore model evaluation metrics, training loss,
+        precision-recall curves and confusion matrix.
+        """)
 
-if uploaded_file is not None:
+        st.info("""
+        **Synthetic Data Analysis**
 
-    try:
+        Explore experimental synthetic fraud generation
+        using a Variational Autoencoder.
+        """)
 
-        transaction_df = pd.read_csv(uploaded_file)
 
-        # Remove target if accidentally included
-        if "Class" in transaction_df.columns:
-            transaction_df = transaction_df.drop(columns=["Class"])
+# =====================================================
+# PAGE 2: MANUAL PREDICTION
+# =====================================================
 
-        missing_features = [
-            col for col in feature_names
-            if col not in transaction_df.columns
-        ]
+elif page == "✍️ Manual Prediction":
 
-        if missing_features:
+    st.title("✍️ Manual Transaction Prediction")
 
-            st.error(
-                "Your CSV is missing these features: "
-                + ", ".join(missing_features)
-            )
+    st.write("""
+    Enter the transaction details below to analyse
+    whether the transaction may be fraudulent.
+    """)
 
-        else:
+    st.info("""
+    The dataset uses anonymized features V1–V28.
+    These features do not represent directly interpretable
+    details such as merchant, location or card type.
+    """)
 
-            # Keep exactly the training feature order
-            transaction_df = transaction_df[feature_names]
+    # Identify important features
+    time_feature = next(
+        (f for f in feature_names if f.lower() == "time"),
+        None
+    )
 
-            if transaction_df.isnull().values.any():
+    amount_feature = next(
+        (f for f in feature_names if f.lower() == "amount"),
+        None
+    )
 
-                st.error(
-                    "Your uploaded CSV contains missing values. "
-                    "Please clean the data before uploading."
+    other_features = [
+        f for f in feature_names
+        if f not in [time_feature, amount_feature]
+    ]
+
+    # -----------------------------------------------
+    # INPUT FORM
+    # -----------------------------------------------
+
+    with st.form("manual_prediction_form"):
+
+        st.subheader("Transaction Details")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            if amount_feature:
+
+                amount = st.number_input(
+                    "Transaction Amount",
+                    min_value=0.0,
+                    value=1000.0,
+                    step=100.0,
+                    help="Enter the transaction amount."
                 )
 
             else:
 
-                scaled_data = scaler.transform(transaction_df)
+                amount = 0.0
 
-                input_tensor = torch.tensor(
-                    scaled_data,
-                    dtype=torch.float32
+        with col2:
+
+            if time_feature:
+
+                transaction_time = st.number_input(
+                    "Transaction Time",
+                    min_value=0.0,
+                    value=0.0,
+                    step=100.0,
+                    help="Time elapsed since the first transaction in the dataset."
                 )
 
-                with torch.no_grad():
+            else:
 
-                    logits = model(input_tensor)
+                transaction_time = 0.0
 
-                    probabilities = torch.sigmoid(
-                        logits
-                    ).numpy().reshape(-1)
+        st.divider()
 
-                predictions = (
-                    probabilities >= threshold
-                ).astype(int)
+        st.subheader("Advanced Model Features")
 
-                results_df = pd.DataFrame({
-                    "Fraud Probability": probabilities,
-                    "Prediction": [
-                        "Fraud" if p == 1 else "Normal"
-                        for p in predictions
-                    ]
-                })
+        st.write("""
+        The model also requires anonymized transaction features.
+        For a simplified demonstration, these are initialized to zero.
 
-                st.subheader("Prediction Results")
+        You can expand the section below to manually enter
+        the feature values.
+        """)
 
-                st.dataframe(
-                    results_df,
-                    use_container_width=True
+        with st.expander(
+            "⚙️ Enter Advanced Features (V1–V28)",
+            expanded=False
+        ):
+
+            st.warning("""
+            These anonymized features cannot be derived from
+            transaction amount or time alone.
+
+            Zero values are demonstration defaults and may not
+            represent a real transaction.
+            """)
+
+            feature_values = {}
+
+            feature_columns = st.columns(3)
+
+            for index, feature in enumerate(other_features):
+
+                with feature_columns[index % 3]:
+
+                    feature_values[feature] = st.number_input(
+                        feature,
+                        value=0.0,
+                        step=0.01,
+                        format="%.6f",
+                        key=f"manual_{feature}"
+                    )
+
+        submitted = st.form_submit_button(
+            "🔍 Detect Fraud",
+            use_container_width=True
+        )
+
+    # -----------------------------------------------
+    # PROCESS PREDICTION
+    # -----------------------------------------------
+
+    if submitted:
+
+        transaction = {}
+
+        if time_feature:
+            transaction[time_feature] = transaction_time
+
+        if amount_feature:
+            transaction[amount_feature] = amount
+
+        for feature in other_features:
+            transaction[feature] = feature_values[feature]
+
+        # Preserve training feature order
+        transaction_df = pd.DataFrame(
+            [transaction]
+        )[feature_names]
+
+        try:
+
+            probabilities, predictions = predict_transactions(
+                transaction_df,
+                model,
+                scaler,
+                threshold
+            )
+
+            probability = float(
+                probabilities[0]
+            )
+
+            prediction = int(
+                predictions[0]
+            )
+
+            st.divider()
+
+            st.header("Prediction Result")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.metric(
+                    "Transaction Amount",
+                    f"{amount:,.2f}"
                 )
 
-                fraud_count = int(np.sum(predictions == 1))
-                normal_count = int(np.sum(predictions == 0))
+            with col2:
 
-                col1, col2 = st.columns(2)
-
-                col1.metric("Potential Fraud", fraud_count)
-                col2.metric("Normal Transactions", normal_count)
-
-                csv_data = results_df.to_csv(index=False).encode("utf-8")
-
-                st.download_button(
-                    "Download Prediction Results",
-                    data=csv_data,
-                    file_name="fraud_predictions.csv",
-                    mime="text/csv"
+                st.metric(
+                    "Fraud Probability",
+                    f"{probability * 100:.2f}%"
                 )
 
-    except Exception as e:
+            st.progress(
+                min(max(probability, 0.0), 1.0)
+            )
 
-        st.error("Something went wrong while processing the CSV.")
-        st.exception(e)
+            if prediction == 1:
 
-else:
+                st.error(
+                    "🚨 Potentially Fraudulent Transaction"
+                )
 
-    st.info(
-        "Upload a transaction CSV to test the trained model."
+                st.write("""
+                The model classified this transaction
+                as potentially fraudulent based on
+                the selected decision threshold.
+                """)
+
+            else:
+
+                st.success(
+                    "✅ Transaction Classified as Legitimate"
+                )
+
+                st.write("""
+                The model classified this transaction
+                as legitimate based on the selected
+                decision threshold.
+                """)
+
+            # Risk classification
+            if probability >= 0.80:
+
+                risk_level = "High Risk"
+
+            elif probability >= 0.40:
+
+                risk_level = "Moderate Risk"
+
+            else:
+
+                risk_level = "Low Risk"
+
+            st.subheader("Risk Analysis")
+
+            st.metric(
+                "Risk Category",
+                risk_level
+            )
+
+            st.write(
+                f"Model Decision Threshold: {threshold:.4f}"
+            )
+
+            st.write(
+                f"Predicted Probability: {probability:.6f}"
+            )
+
+            st.divider()
+
+            st.caption("""
+            This is an academic demonstration. The anonymized
+            features are initialized to zero unless manually changed.
+            The result should not be considered a real-world
+            financial risk assessment.
+            """)
+
+        except Exception as e:
+
+            st.error(
+                "Prediction failed."
+            )
+
+            st.exception(e)
+
+
+# =====================================================
+# PAGE 3: BATCH PREDICTION
+# =====================================================
+
+elif page == "📂 Batch Prediction":
+
+    st.title("📂 Batch Fraud Detection")
+
+    st.write("""
+    Upload a CSV file containing transaction features.
+    The trained Deep Learning model will analyse all
+    transactions and generate predictions.
+    """)
+
+    st.info("""
+    Upload raw, unscaled feature values.
+
+    The saved scaler will automatically preprocess the data.
+
+    Do not include the Class column.
+    """)
+
+    # CSV TEMPLATE
+    template_df = pd.DataFrame(
+        columns=feature_names
     )
 
-st.divider()
+    template_csv = template_df.to_csv(
+        index=False
+    ).encode("utf-8")
 
-# -----------------------------------------------------
-# 8. PROJECT INFORMATION
-# -----------------------------------------------------
+    st.download_button(
+        "📥 Download CSV Template",
+        data=template_csv,
+        file_name="transaction_template.csv",
+        mime="text/csv"
+    )
 
-st.header("5. Project Information")
+    st.divider()
 
-st.write("""
-**Project:** Credit Card Fraud Detection and Synthetic Risk Lab
+    uploaded_file = st.file_uploader(
+        "Upload Transaction CSV",
+        type=["csv"]
+    )
 
-**Technology:** Python, PyTorch, NumPy, Pandas, Scikit-learn and Streamlit
+    if uploaded_file is not None:
 
-**Deep Learning Model:** Multi-Layer Perceptron (MLP)
+        try:
 
-**Additional Experiments:** LSTM sequence model and Variational Autoencoder (VAE)
+            transaction_df = pd.read_csv(
+                uploaded_file
+            )
 
-**Application Purpose:** Demonstrate how deep learning can help identify
-potentially fraudulent credit card transactions.
-""")
+            if "Class" in transaction_df.columns:
 
-st.warning(
-    "This is an academic demonstration. Predictions should not be "
-    "used as the sole basis for real financial decisions."
-)
+                transaction_df = transaction_df.drop(
+                    columns=["Class"]
+                )
 
-st.caption("Credit Card Fraud Detection and Synthetic Risk Lab | Python Project")
+            missing_features = [
+                col for col in feature_names
+                if col not in transaction_df.columns
+            ]
+
+            if missing_features:
+
+                st.error(
+                    "Missing required features:"
+                )
+
+                st.write(missing_features)
+
+            elif transaction_df.empty:
+
+                st.error(
+                    "The uploaded CSV contains no transactions."
+                )
+
+            else:
+
+                transaction_df = transaction_df[
+                    feature_names
+                ]
+
+                transaction_df = transaction_df.apply(
+                    pd.to_numeric,
+                    errors="coerce"
+                )
+
+                if transaction_df.isnull().values.any():
+
+                    st.error(
+                        "The CSV contains missing or non-numeric values."
+                    )
+
+                else:
+
+                    st.subheader("Uploaded Transactions")
+
+                    st.dataframe(
+                        transaction_df.head(10),
+                        use_container_width=True
+                    )
+
+                    st.write(
+                        f"Total transactions: **{len(transaction_df)}**"
+                    )
+
+                    probabilities, predictions = predict_transactions(
+                        transaction_df,
+                        model,
+                        scaler,
+                        threshold
+                    )
+
+                    results_df = pd.DataFrame({
+
+                        "Fraud Probability (%)":
+                            probabilities * 100,
+
+                        "Prediction": [
+                            "Fraudulent"
+                            if p == 1
+                            else "Legitimate"
+                            for p in predictions
+                        ]
+                    })
+
+                    st.header("Prediction Results")
+
+                    fraud_count = int(
+                        np.sum(predictions == 1)
+                    )
+
+                    normal_count = int(
+                        np.sum(predictions == 0)
+                    )
+
+                    col1, col2, col3 = st.columns(3)
+
+                    col1.metric(
+                        "Total Transactions",
+                        len(predictions)
+                    )
+
+                    col2.metric(
+                        "Potential Fraud",
+                        fraud_count
+                    )
+
+                    col3.metric(
+                        "Legitimate Transactions",
+                        normal_count
+                    )
+
+                    st.dataframe(
+                        results_df,
+                        use_container_width=True
+                    )
+
+                    if fraud_count > 0:
+
+                        st.error(
+                            f"⚠️ {fraud_count} potentially fraudulent "
+                            "transaction(s) detected."
+                        )
+
+                    else:
+
+                        st.success(
+                            "No potentially fraudulent transactions detected."
+                        )
+
+                    complete_results = pd.concat(
+                        [
+                            transaction_df.reset_index(drop=True),
+                            results_df.reset_index(drop=True)
+                        ],
+                        axis=1
+                    )
+
+                    csv_data = complete_results.to_csv(
+                        index=False
+                    ).encode("utf-8")
+
+                    st.download_button(
+                        "📥 Download Prediction Results",
+                        data=csv_data,
+                        file_name="fraud_predictions.csv",
+                        mime="text/csv"
+                    )
+
+        except Exception as e:
+
+            st.error(
+                "An error occurred while processing the CSV."
+            )
+
+            st.exception(e)
+
+
+# =====================================================
+# PAGE 4: MODEL ANALYTICS
+# =====================================================
+
+elif page == "📊 Model Analytics":
+
+    st.title("📊 Model Analytics")
+
+    st.write(
+        "Evaluation metrics and visualizations "
+        "of the trained Deep Learning model."
+    )
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    col1.metric(
+        "Model",
+        "Deep MLP"
+    )
+
+    col2.metric(
+        "ROC-AUC",
+        f'{results["roc_auc"]:.4f}'
+    )
+
+    col3.metric(
+        "PR-AUC",
+        f'{results["pr_auc"]:.4f}'
+    )
+
+    col4.metric(
+        "Decision Threshold",
+        f"{threshold:.4f}"
+    )
+
+    st.divider()
+
+    graph_files = [
+
+        (
+            "Training Loss",
+            OUTPUT_DIR / "pytorch_training_loss.png"
+        ),
+
+        (
+            "Precision-Recall Curve",
+            OUTPUT_DIR / "pytorch_precision_recall.png"
+        ),
+
+        (
+            "Confusion Matrix",
+            OUTPUT_DIR / "pytorch_confusion_matrix.png"
+        )
+    ]
+
+    for title, image_path in graph_files:
+
+        if image_path.exists():
+
+            st.subheader(title)
+
+            st.image(
+                str(image_path),
+                use_container_width=True
+            )
+
+        else:
+
+            st.warning(
+                f"Graph not found: {image_path.name}"
+            )
+
+
+# =====================================================
+# PAGE 5: SYNTHETIC DATA
+# =====================================================
+
+elif page == "🧪 Synthetic Data":
+
+    st.title("🧪 Synthetic Fraud Data Analysis")
+
+    st.write("""
+    Experimental synthetic fraud data generation
+    using a Variational Autoencoder (VAE).
+    """)
+
+    synthetic_path = (
+        OUTPUT_DIR / "synthetic_fraud_pca.png"
+    )
+
+    comparison_path = (
+        OUTPUT_DIR / "synthetic_feature_comparison.png"
+    )
+
+    if synthetic_path.exists():
+
+        st.subheader("PCA Visualization")
+
+        st.image(
+            str(synthetic_path),
+            use_container_width=True
+        )
+
+    else:
+
+        st.warning(
+            "Synthetic PCA visualization not found."
+        )
+
+    if comparison_path.exists():
+
+        st.subheader(
+            "Original vs Synthetic Feature Comparison"
+        )
+
+        st.image(
+            str(comparison_path),
+            use_container_width=True
+        )
+
+    else:
+
+        st.warning(
+            "Feature comparison visualization not found."
+        )
+
+    st.divider()
+
+    st.info("""
+    A Variational Autoencoder was trained on fraudulent
+    training examples to generate experimental synthetic data.
+
+    Synthetic transactions are experimental samples
+    and are not verified real-world fraud cases.
+    """)
+
+
+# =====================================================
+# PAGE 6: PROJECT INFORMATION
+# =====================================================
+
+elif page == "ℹ️ Project Information":
+
+    st.title("ℹ️ Project Information")
+
+    st.header("Credit Card Fraud Detection")
+
+    st.write("""
+    **Project Objective**
+
+    To develop a machine learning system that identifies
+    potentially fraudulent credit card transactions
+    using transaction data and deep learning techniques.
+    """)
+
+    st.header("Technology Stack")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.write("""
+        - Python
+        - PyTorch
+        - NumPy
+        - Pandas
+        - Scikit-learn
+        """)
+
+    with col2:
+
+        st.write("""
+        - Streamlit
+        - Matplotlib
+        - Joblib
+        - Machine Learning
+        - Deep Learning
+        """)
+
+    st.header("Models and Experiments")
+
+    st.write("""
+    - Multi-Layer Perceptron (MLP)
+    - LSTM
+    - Variational Autoencoder (VAE)
+    - Synthetic Fraud Generation
+    - Model Evaluation and Comparison
+    """)
+
+    st.header("Application Workflow")
+
+    st.write("""
+    1. Transaction data is entered manually or uploaded.
+    2. The transaction features are validated.
+    3. The saved preprocessing scaler transforms the data.
+    4. The trained Deep Learning model generates predictions.
+    5. The fraud probability is compared against the
+       selected decision threshold.
+    6. The application displays and exports the results.
+    """)
+
+    st.warning("""
+    This application is developed for academic demonstration.
+    Predictions should not be used as the sole basis
+    for real financial decisions.
+    """)
+
+    st.caption(
+        "Credit Card Fraud Detection | Python Project"
+    )
